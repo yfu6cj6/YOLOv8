@@ -1,0 +1,7 @@
+runs
+train/images/*
+train/labels/*
+train/labels.cache
+valid/images/*
+valid/labels/*
+valid/labels.cache
