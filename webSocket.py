@@ -5,11 +5,15 @@ import cv2
 import json
 
 async def stream_camera(websocket):
-    await websocket.send('Hello World')
+    await websocket.send(json.dumps({
+        'opcode': 0,
+        'msg': 'Hello World'
+    }))
     await asyncio.sleep(0.5)
     # Load YOLO model
     model = YOLO("best.pt")
     vid = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    start_yolo = False
     if not vid.isOpened():
         print(f"Failed to open camera")
         return
@@ -33,12 +37,21 @@ async def stream_camera(websocket):
             # Display the annotated frame
             cv2.imshow("YOLOv8 Inference", annotated_frame)
 
+            if not start_yolo:
+                start_yolo = True
+                await websocket.send(json.dumps({
+                    'opcode': 1,
+                    'msg': 'Camera starts'
+                }))
+
             for result in results:                                         # iterate results
                 boxes = result.boxes.cpu().numpy()                         # get boxes on cpu in numpy
                 for box in boxes:                                          # iterate boxes
                     xy = box.xyxy[0].astype(int)                            # get corner points as int
                     name = result.names[int(box.cls[0])]
                     obj = {
+                        'opcode': 2,
+                        'msg': 'Predict',
                         'name': name,
                         'xy': xy.tolist()
                     }
